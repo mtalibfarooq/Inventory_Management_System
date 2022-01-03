@@ -1,0 +1,78 @@
+﻿@model IMS.ORDER
+
+@{
+    ViewBag.Title = "Details";
+    Layout = "~/Views/Shared/_sidePanelPage.cshtml";
+
+    Inventory_Management_SystemEntities db = new Inventory_Management_SystemEntities();
+
+    var orderDetails = db.ORDER_DETAIL.Where(od => od.Order_ID == Model.Order_ID).ToList();
+    var b = orderDetails.FirstOrDefault().Bill_Number;
+
+    var bill = db.PAYMENTs.Where(p => p.Bill_Number == b).FirstOrDefault();
+}
+
+<h2>Order Details</h2>
+
+<br />
+<div class="row">
+    
+    <div class="col-md-12 order-md-1 form-group">
+        <form class="needs-validation" novalidate="">
+            <div class="row">
+                <div class="col-md-12 mb-3">
+                    <label for="firstName">Account No.</label>
+                    <input type="text" class="form-control" id="txt_AccountNumber" placeholder="" value="@bill.Account_Number" required>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label for="email">Payment Type</label>
+                <input type="text" class="form-control" id="txt_AccountNumber" placeholder="" value="@bill.Payment_Type" required>
+            </div>
+
+            <div class="mb-3">
+                <label for="address">Is Paid</label>
+                <input type="text" class="form-control" id="txt_AccountNumber" placeholder="" value="@(bill.Is_Paid == true ? "Paid" : "Not Paid" )" required>
+
+            </div>
+
+            <hr class="mb-4">
+        </form>
+
+        <table class="tg table table-striped" id="ProductTable">
+            <thead>
+                <tr>
+                    <th style="display:none">Product ID</th>
+                    <th>Product Name</th>
+                    <th>Price</th>
+                    <th>Quantity</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var orderDetail in orderDetails)
+                {
+                    var product = db.PRODUCTs.Find(orderDetail.Product_ID);
+                    <tr>
+                        <th style="display:none">@orderDetail.Product_ID</th>
+                        <th>@product.Product_Name</th>
+                        <th>@orderDetail.Unit_Price</th>
+                        <th>@orderDetail.Quantity</th>
+                        <th>@(orderDetail.Unit_Price * orderDetail.Quantity)</th>
+                    </tr>
+                }
+            </tbody>
+
+        </table>
+    </div>
+
+</div>
+
+<p>
+
+    @Html.ActionLink("Back to List", "Index")
+</p>
+
+
+

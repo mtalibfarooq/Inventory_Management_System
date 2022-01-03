@@ -1,0 +1,208 @@
+﻿@model IMS.ORDER
+
+@{
+    ViewBag.Title = "Create";
+    Layout = "~/Views/Shared/_sidePanelPage.cshtml";
+    Inventory_Management_SystemEntities db = new Inventory_Management_SystemEntities();
+}
+
+<br />
+<div class="row">
+    <div class="col-md-5 order-md-2 mb-4">
+        <h4 class="mb-3">Order Information</h4>
+        <form class="needs-validation" novalidate="">
+            <div class="row">
+                <div class="col-md-12 mb-3">
+                    <label for="firstName">Account No.</label>
+                    <input type="text" class="form-control" id="txt_AccountNumber" placeholder="" value="" required >
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label for="email">Payment Type</label>
+                <select class="form-control" id="PType">
+                    <option value="Cashier">Cashier</option>
+                    <option value="Supplier">Supplier</option>
+
+                </select> 
+            </div>
+
+            <div class="mb-3">
+                <label for="address">Is Paid</label>
+                <select class="form-control" id="IsPaid">
+                    <option value="1">Paid</option>
+                    <option value="0">Not Paid</option>
+
+                </select>
+            </div>
+
+            <hr class="mb-4">
+            <button id="placeOrder" class="btn btn-primary btn-lg btn-block" type="button">Place Order</button>
+        </form>
+
+    </div>
+    <div class="col-md-7 order-md-1 form-group">
+        <label class="d-flex justify-content-between align-items-center mb-3">Select Product</label>
+        <select class="form-control" id="products">
+            @foreach (var product in db.PRODUCTs.OrderBy(p => p.Product_Name).ToList())
+            {
+                <option value="@product.Product_ID">@product.Product_Name</option>
+            }
+        </select>
+
+        <br />
+
+        <label class="d-flex justify-content-between align-items-center mb-3">Enter Quantity</label>
+
+        <input type="text" class="form-control" id="quantity" />
+
+        <br />
+
+        <input type="button" class="btn btn-primary" value="Add Product" id="Btn_AddProduct" />
+
+        <br />
+
+        <table class="tg table table-striped" id="ProductTable">
+            <thead>
+                <tr>
+                    <th style="display:none">Product ID</th>
+                    <th>Product Name</th>
+                    <th>Price</th>
+                    <th>Quantity</th>
+                    <th>Total</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+
+           
+    </div>
+
+</div>
+
+
+
+@section scripts{
+
+    <script>
+
+
+        $('#Btn_AddProduct').click(function () {
+            var productID = $('#products').val();
+            var productName = $('#products option:selected').text();
+            var productQuantity = $('#quantity').val();
+
+            $.ajax({
+                url: '../ORDERs/GetPrice',
+                type: 'POST',
+                data: {
+                    productID: productID
+                },
+                success: function (data) {
+                    console.log(data);
+                    if (data == "") {
+                        alert("Oops! something went wrong");
+                    }
+                    else {
+
+                        $('#ProductTable tbody').append("<tr><td style='display:none'>" + productID + "</td><td>" + productName + "</td><td>" + data + "</td><td>" + productQuantity + "</td><td>" + (parseInt(data) * parseInt(productQuantity)) + "</td><td><input type='button' class='btn btn-danger' value='Remove' onclick='Remove(this);' /></td></tr>");
+                    }
+
+                },
+                error: function (e) {
+                    console.log(e);
+                }
+            });
+
+        });
+
+        function Remove(control) {
+            alert("function called");
+            $(control).parents("tr").remove();
+        }
+
+
+        $('#placeOrder').click(function () {
+            var accNo = $('#txt_AccountNumber').val();
+            var PaymentType = $('#PType').val();
+            var IsPaid = $('#IsPaid').val();
+            var productIDs = [];
+            var productQty = [];
+
+            var myTab = document.getElementById('ProductTable');
+
+            for (i = 1; i < myTab.rows.length; i++) {
+
+                var objCells = myTab.rows.item(i).cells;
+
+                for (var j = 0; j < objCells.length; j++) {
+                    if (j == 0) {
+                        productIDs.push(objCells.item(j).innerHTML);
+                    }
+                    else if (j == 3) {
+                        productQty.push(objCells.item(j).innerHTML);
+                    }
+                }
+
+            }
+            
+            console.log(productIDs);
+            console.log(productQty);
+
+
+            $.ajax({
+                url: '../ORDERs/PlaceOrder',
+                type: 'POST',
+                data: {
+                    accountNo: accNo,
+                    PaymentType: PaymentType,
+                    IsPaid: IsPaid,
+                    Ids: productIDs,
+                    Qty: productQty
+                },
+                success: function (data) {
+                    console.log(data);
+                    if (data.indexOf("success") != -1) {
+                        var ad = data.split('-')[1];
+                        alert("Order Placed");
+                        var Id = "";
+                        var qty = "";
+
+                        for (var i = 0; i < productIDs.length; i++) {
+                            Id += productIDs[i] + ",";
+                        }
+                        for (var i = 0; i < productQty.length; i++) {
+                            qty += productQty[i] + ",";
+                        }
+                        window.location = '../ORDERs/GeneratePDF?orderNo=' + ad + '&accountNo=' + accNo + '&PaymentType=' + PaymentType + '&IsPaid=' + IsPaid + '&Ids=' + Id + '&Qty=' + qty;
+                        setTimeout(function () { window.location = '../ORDERs/Index'; }, 5000);
+                    }
+                    else if (data.indexOf(":") != -1) {
+                        var product = data.split(':');
+                        alert("Please select this product " + product[0] + " quantity less than " + product[1]);
+                    }
+                    else {
+                        alert("Oops! something went wrong");
+                    }
+
+                },
+                error: function (e) {
+                    console.log(e.responseText);
+                }
+            });
+
+
+
+        });
+      
+
+
+
+
+    </script>
+
+
+}
+<script src="~/Scripts/jquery-1.10.2.min.js"></script>
+<script src="~/Scripts/jquery.validate.min.js"></script>
+<script src="~/Scripts/jquery.validate.unobtrusive.min.js"></script>
