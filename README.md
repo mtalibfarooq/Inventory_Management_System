@@ -1,4 +1,4 @@
 # Inventory_Management_System
 
-Create an issue if you are a student and require *ASP.NET MVC* C# web application.
+Create an issue if you require *ASP.NET MVC* C# IMS web application.
 
